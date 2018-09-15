@@ -86,7 +86,7 @@ module support_functions_threed
     Apz(1:nbath) = Apz(1:nbath) - etaz1*ppz(1:nbath)
     Apz((nparticles-nbath+1):nparticles) = Apz((nparticles-nbath+1):nparticles) - etaz2*ppz((nparticles-nbath+1):nparticles)
 
-  end subroutine
+  end subroutine vecA
 
   subroutine vecB_edges(dst, nparticles, dOmx, dOmy, dOmz)
 
@@ -110,8 +110,66 @@ module support_functions_threed
       dOmz(nparticles+1-ii) = dst*g2
     end do
 
-
   end subroutine vecB_edges
+
+  subroutine vecA_lb(xx, yy, zz, ppx, ppy, ppz, cfx, cfy, cfz, &
+                  alphay, alphaz, etax1, etay1, etaz1, etax2, etay2, etaz2, &
+                  nbath, nparticles, Axx, Ayy, Azz, Apx, Apy, Apz)
+
+    implicit none
+    real(kind=8), dimension(:), intent(in)              :: xx, yy, zz, ppx, ppy, ppz
+    real(kind=8), dimension(:), intent(in)              :: cfx, cfy, cfz
+    real(kind=8), intent(in)                            :: alphay, alphaz
+    real(kind=8), intent(in)                            :: etax1, etay1, etaz1, etax2, etay2, etaz2
+    integer, intent(in)                                 :: nparticles, nbath
+    real(kind=8), dimension(:), intent(inout)           :: Axx, Ayy, Azz, Apx, Apy, Apz
+
+    ! Entire chain: harmnonic and coulomb forces, and cooling laser
+    Axx(1:nparticles) = ppx(1:nparticles)
+    Ayy(1:nparticles) = ppy(1:nparticles)
+    Azz(1:nparticles) = ppz(1:nparticles)
+    Apx(1:nparticles) = -1.0d0*xx(1:nparticles) + cfx(1:nparticles) !-etaC*ppx
+    Apy(1:nparticles) = -1.0d0*alphay*alphay*yy(1:nparticles) + cfy(1:nparticles) !- etaC*ppy
+    Apz(1:nparticles) = -1.0d0*alphaz*alphaz*zz(1:nparticles) + cfz(1:nparticles) !- etaC*ppy
+
+    ! Thermal baths at edges: if particles are at a certain distance from the edge, they recieve a stochastic kick
+    ! Left edge
+    Apx(1:nbath) = Apx(1:nbath) - etax1*ppx(1:nbath)
+    Apy(1:nbath) = Apy(1:nbath) - etay1*ppy(1:nbath)
+    Apz(1:nbath) = Apz(1:nbath) - etaz1*ppz(1:nbath)
+
+    ! Right edge
+    Apx((nparticles-nbath+1):nparticles) = Apx((nparticles-nbath+1):nparticles) - etax2*ppx((nparticles-nbath+1):nparticles)
+    Apy((nparticles-nbath+1):nparticles) = Apy((nparticles-nbath+1):nparticles) - etay2*ppy((nparticles-nbath+1):nparticles)
+    Apz((nparticles-nbath+1):nparticles) = Apz((nparticles-nbath+1):nparticles) - etaz2*ppz((nparticles-nbath+1):nparticles)
+
+  end subroutine vecA_lb
+
+  subroutine vecB_edges_lb(dst, nparticles, dOmx, dOmy, dOmz)
+
+    implicit none
+    real(kind=8), intent(in)                    :: dst
+    integer, intent(in)                         :: nparticles
+    real(kind=8), dimension(:), intent(inout)   :: dOmx, dOmy, dOmz
+    real(kind=8)                                :: g1, g2
+    integer                                     :: ii
+
+    call ranseed()
+    do ii=1,3,1
+      call bm(g1, g2)
+      dOmx(ii) = dst*g1
+      dOmx(nparticles+1-ii) = dst*g2
+      call bm(g1, g2)
+      dOmy(ii) = dst*g1
+      dOmy(nparticles+1-ii) = dst*g2
+      call bm(g1, g2)
+      dOmz(ii) = dst*g1
+      dOmz(nparticles+1-ii) = dst*g2
+    end do
+
+  end subroutine vecB_edges_lb
+
+
 
   subroutine vecB_cool(dst, nparticles, dOmx, domy, dOmz)
 
@@ -197,5 +255,51 @@ module support_functions_threed
     end do
 
   end subroutine current_Flux
+
+  subroutine dopplerForces()
+    implicit none
+
+  end subroutine dopplerForces
+
+!  subroutine genEdges(xx0, nparticles, edges)
+!    implicit none
+!    real(kind=8), dimension(:), intent(in)    :: xx0
+!    real(kind=8), dimension(:), intent(in)    :: nparticles
+!    real(kind=8), dimension(:), intent(inout) :: edges
+!    integer                                   :: nn
+
+!    do nn=2, nparticles, 1
+!      edges(ii) = 0.5d0*(xx0(nn-1) + xx0(nn))
+!    end do
+
+!    edges(1) = xx0(1) + (xx0(1)-edges(2))
+!    edges(nparticles+1) = xx(nparticles) + (xx(nparticles)-edges(nparticles-1))
+!  end subroutine genEdges
+
+  !subroutine genEdges_eq(xx0, nparticles, edges)
+!    implicit none!
+!    real(kind=8), dimension(:), intent(in)    :: xx0
+!    real(kind=8), dimension(:), intent(in)    :: nparticles
+!    real(kind=8), dimension(:), intent(inout) :: edges
+
+
+
+
+!  end subroutine genEdges_eq
+
+  !subroutine grid_midpoints(xx0, nparticles, clen, grid)
+  !  implicit none
+  !  real(kind=8), dimension(:), intent(in)    :: xx0
+  !  integer, intent(in)                       :: nparticles
+  !  real(kind=8), intent(inout)               :: clen
+  !  real(kind=8), dimension(:), intent(inout) :: grid
+
+  !  clen = xx0(nparticles) - xx0(1)  &
+  !            + 0.5d0*(xx0(2)-xx0(1)) + 0.5d0*(xx0(nparticles)-xx0(nparticles-1))
+
+  !  grid(1) =
+  !  grid(2:nparticles) =
+
+  !end subroutine grid_midpoints
 
 end module support_functions_threed

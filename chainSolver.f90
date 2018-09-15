@@ -8,9 +8,8 @@ program chainSolver
   use support_functions_threed
   implicit none
 
-  integer :: nparticles, traj, nsteps, nsave, ii, jj, ll, mm, st, saved, kk, nbath, save_freq, REM, ps, local_traj, ntrajC
+  integer :: nparticles, traj, nsteps, nsave, ii, jj, ll, mm, saved, kk, nbath, save_freq, REM, ps, local_traj, ntrajC
   real(kind=8) :: mass, charge, tt, tp, dt, dst, long_freq, alphax, alphay, alphaz, ic_radius, initT, pt
-
   real(kind=8) :: aetax1, aetax2, aetay1, aetay2, aetaz1, aetaz2
   real(kind=8) :: aDx1, aDx2, aDy1, aDy2, aDz1, aDz2
   real(kind=8) :: JJix, JJiy, JJiz, JJix_s, JJiy_s, JJiz_s, JJix_av, JJiy_av, JJiz_av
@@ -31,10 +30,10 @@ program chainSolver
   real(kind=8), dimension(:,:), allocatable :: xxS_av, yyS_av, zzS_av, pxS_av, pyS_av, pzS_av
   real(kind=8), dimension(:,:), allocatable :: invD1,invD2
   logical                                   :: continue, opened
-  !include "declarations.f90"
-
   ! mpi variables
   integer :: rank, procs, status(MPI_STATUS_SIZE), alloc_err, source, ierr
+
+
   call MPI_INIT(ierr)                                                                               ! Neccesary mpi initialization calls
   call MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierr)
   call MPI_COMM_SIZE(MPI_COMM_WORLD, procs, ierr)
@@ -229,7 +228,6 @@ program chainSolver
   call mpi_bcast(zz0, nparticles, mpi_double_precision, 0, MPI_COMM_WORLD, ierr)
 
   ! Solution of the equations of motion
-  st = 1
   do kk=1, local_traj, 1
     print*, "Proc.", rank, "on trajectory", kk
     !xxs = 0.0d0
@@ -329,19 +327,16 @@ program chainSolver
         if(saved .gt. nsave) continue = .False.
         !print*, continue
         ps = ps + 1
-        st = st + 1
-        print*, st
-        if((mod(st,10) .eq. 0)) then
-          print*, "In here"
-          px2S = px2S/kk
-          py2S = py2S/kk
-          pz2S = pz2S/kk
+        if((mod(kk,10) .eq. 0)) then
+          !px2S = px2S/kk
+          !py2S = py2S/kk
+          !pz2S = pz2S/kk
           !call mpi_reduce(xxS/kk, xxS_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
           !call mpi_reduce(yyS/kk, yyS_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
           !call mpi_reduce(zzS/kk, zzS_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
-          call mpi_reduce(px2S, px2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
-          call mpi_reduce(py2S, py2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
-          call mpi_reduce(pz2S, pz2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
+          call mpi_reduce(px2S/kk, px2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
+          call mpi_reduce(py2S/kk, py2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
+          call mpi_reduce(pz2S/kk, pz2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
           call mpi_reduce(JJix/nsave, JJix_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
           call mpi_reduce(JJiy/nsave, JJiy_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
           call mpi_reduce(JJiz/nsave, JJiz_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
@@ -391,15 +386,15 @@ program chainSolver
     if(kk .eq. local_traj) then
       call mpi_barrier(mpi_comm_world, ierr)
       ! Last round of saving
-      px2S = pxS*pxS/(kk*kk)
-      py2S = pyS*pyS/(kk*kk)
-      pz2S = pzS*pzS/(kk*kk)
+      !px2S = pxS*pxS/(kk*kk)
+      !py2S = pyS*pyS/(kk*kk)
+      !pz2S = pzS*pzS/(kk*kk)
       !call mpi_reduce(xxS/kk, xxS_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
       !call mpi_reduce(yyS/kk, yyS_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
       !call mpi_reduce(zzS/kk, zzS_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
-      call mpi_reduce(px2S, px2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
-      call mpi_reduce(py2S, py2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
-      call mpi_reduce(pz2S, pz2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
+      call mpi_reduce(px2S/kk, px2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
+      call mpi_reduce(py2S/kk, py2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
+      call mpi_reduce(pz2S/kk, pz2S_av, nparticles*nsave, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
       call mpi_reduce(JJix/nsave, JJix_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
       call mpi_reduce(JJiy/nsave, JJiy_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
       call mpi_reduce(JJiz/nsave, JJiz_av, 1, mpi_double_precision, mpi_sum, 0, mpi_comm_world, ierr)
@@ -431,6 +426,7 @@ program chainSolver
   end do
 
   call mpi_finalize(ierr)
+
 
 
 end program chainSolver
