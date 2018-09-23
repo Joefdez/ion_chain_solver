@@ -350,7 +350,7 @@ program chainSolver
           JJix_av = JJix_av/ntrajC
           JJiy_av = JJiy_av/ntrajC
           JJiz_av = JJiz_av/ntrajC
-          print*, px2s_av(1:3,0)
+          !print*, px2s_av(1:3,0)
           if(rank .eq. 0) then
             !open(unit=11, file="pos.dat")
             if(kk .eq. 1) then
